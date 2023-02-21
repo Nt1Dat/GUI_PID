@@ -8,6 +8,7 @@
 #include <QVector>
 #include <QMessageBox>
 #include <QScrollBar>
+#include "qcustomplot.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -39,6 +40,8 @@ private slots:
     void Recievedata();
 
 
+    void on_pushButton_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -49,5 +52,7 @@ private:
 
     void updateSerialPort();
     void configAllButton(bool status);
+    void plotSetting(QCustomPlot  *plot, const char* xLabel, const char * yLabel);
+    void plotConfig();
 };
 #endif // MAINWINDOW_H

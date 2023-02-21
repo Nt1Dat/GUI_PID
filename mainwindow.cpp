@@ -6,6 +6,13 @@
 #include <QTimer>
 #include <cstring>
 #include <QVector>
+#include <QThread>
+int k , counter = 400;
+
+QVector<double> a(500), b(500);
+
+QVector<double> c , d;
+
 
 MainWindow::~MainWindow()
 {
@@ -29,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
     mSerialScanTimer->setInterval(5000);
     mSerialScanTimer->start();
 
-
+    plotConfig();
 
 
 
@@ -43,6 +50,47 @@ void MainWindow::configAllButton(bool status)
    ui->turningButton->setEnabled(status);
    ui->sendButton->setEnabled(status);
    ui->sendButton->setEnabled(status);
+}
+void MainWindow:: plotSetting(QCustomPlot  *plot, const char* xLabel, const char * yLabel)
+{
+       QFont legendFont = font();
+       legendFont.setPointSize(8);
+       plot  -> yAxis->setLabel(yLabel);
+       plot  -> xAxis-> setLabel(xLabel);
+       plot  -> setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+       plot  -> legend -> setVisible(true);
+       plot  -> legend->setFont(legendFont);
+       plot  -> legend->setSelectedFont(legendFont);
+       plot  -> legend->setSelectableParts(QCPLegend::spItems);
+}
+
+void MainWindow::plotConfig()
+{
+           QPen pen;
+           pen.setStyle(Qt::SolidLine);
+           pen.setWidth(3);
+           pen.setColor("#E2483E");
+           QPen pen2;
+           pen2.setStyle(Qt::SolidLine);
+           pen2.setWidth(3);
+           pen2.setColor("#5C97E3");
+       // plot init//
+
+
+       ui -> plot -> addGraph();
+       ui -> plot -> graph(0) -> setLineStyle(QCPGraph::lsLine);
+       ui->plot->graph(0)->setPen(pen);
+       ui->plot->graph(0)->setName("Ref");
+
+       ui -> plot -> addGraph();
+       ui -> plot -> graph(1) -> setLineStyle(QCPGraph::lsLine);
+       ui->plot->graph(1)->setPen(pen2);
+       ui->plot->graph(1)->setName("Tunning");
+
+       b[0]=0;
+
+
+       plotSetting(ui-> plot, "Time", "Velocity");
 }
 
 void MainWindow::updateSerialPort()
@@ -139,11 +187,51 @@ void MainWindow::on_sendButton_clicked()
     QByteArray bytes;
     QByteArray a ("02 53 50 49 44");
     a = QByteArray::fromHex(a);
-    bytes.append(a+bKp+bKi+bKd+bsetPoint);
 
-    qDebug() << bytes << "\n";
-    qDebug() << a << "\n";
+    QByteArray b ("03");
+    b=QByteArray::fromHex(b);
+    bytes.append(a+bKp+bKi+bKd+bsetPoint+b);
+
+    qDebug() << bytes;
+
     mSerial->write(bytes);
+
+    if(mSerial -> isWritable())
+            {
+        QString text = "Send succeed \n";
+        ui->textTransmit->append(text);
+            }
+    //Plot print SetPoint
+    c={0,400};
+    d={fsetPoint,fsetPoint};
+    ui -> plot -> graph(0) -> setData(c,d);
+    ui->plot->rescaleAxes();
+    ui->plot->replot();
+    ui-> plot -> update();
+}
+
+
+
+void MainWindow::on_turningButton_clicked()
+{
+    QByteArray a ("02 56 54 55 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03");
+    a = QByteArray::fromHex(a);
+    mSerial->write(a);
+
+    if(mSerial -> isWritable())
+            {
+        QString text = "Send succeed \n";
+        ui->textTransmit->append(text);
+            }
+
+}
+
+
+void MainWindow::on_stopButton_clicked()
+{
+    QByteArray a ("02 53 54 4F 50 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03");
+    a = QByteArray::fromHex(a);
+    mSerial->write(a);
 
     if(mSerial -> isWritable())
             {
@@ -153,25 +241,68 @@ void MainWindow::on_sendButton_clicked()
 }
 
 
-
-void MainWindow::on_turningButton_clicked()
-{
-
-}
-
-
-void MainWindow::on_stopButton_clicked()
-{
-
-}
-
 void MainWindow::Recievedata()
 {
- QByteArray data=mSerial->readAll();
-QString text = QString(data);
-ui->textRecieve->append(text);
+
+int s=7;
+QByteArray data=mSerial->readAll();
+if(data.size() >= s )
+{
+    QString text = QString(data);
+    text.replace(" ","");
+
+    ui->textRecieve->append(text);
+    if(k<counter)
+    {
+        a[k]=(text.toFloat());
+        if(k>1){
+            b[k]=(b[k-1]+1);
+        }
+
+        ui -> plot -> graph(1) -> setData(b,a);
+        ui->plot->rescaleAxes();
+        ui->plot->replot();
+        ui-> plot -> update();
+
+        k++;
+
+
+    }
+    else if(k==counter)
+    {
+
+        QByteArray a ("02 53 54 4F 50 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03");
+        a = QByteArray::fromHex(a);
+        mSerial->write(a);
+
+        if(mSerial -> isWritable())
+                {
+            QString text = "STOP \n";
+            ui->textTransmit->append(text);
+                }
+   }
+
+}
 }
 
 
 
+
+
+void MainWindow::on_pushButton_clicked()
+{
+    for(k=0;k<counter;k++)
+    {
+        a[k]=0;
+        b[k]=0;
+    }
+    QVector<double> emptx = {0}, empty ={0};
+    ui->plot->graph(1)->setData(emptx,empty);
+    ui->plot->graph(0)->setData(emptx,empty);
+    ui->plot->rescaleAxes();
+    ui->plot->replot();
+    ui-> plot -> update();
+    k=0;
+
+}
 
