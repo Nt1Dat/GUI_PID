@@ -33,7 +33,7 @@ private slots:
 
     void on_sendButton_clicked();
 
-    void on_turningButton_clicked();
+
 
     void on_stopButton_clicked();
 
@@ -42,17 +42,25 @@ private slots:
 
     void on_pushButton_clicked();
 
+
+
+    void on_vButton_clicked();
+
+    void on_pButton_clicked();
+
 private:
     Ui::MainWindow *ui;
 
     QSerialPort *mSerial;
     QList <QSerialPortInfo> mSerialPorts;
     QTimer *mSerialScanTimer;
-
+    QString code;
 
     void updateSerialPort();
     void configAllButton(bool status);
     void plotSetting(QCustomPlot  *plot, const char* xLabel, const char * yLabel);
     void plotConfig();
+
+    QString tex;
 };
 #endif // MAINWINDOW_H

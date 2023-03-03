@@ -7,9 +7,9 @@
 #include <cstring>
 #include <QVector>
 #include <QThread>
-int k , counter = 400;
+int k , counter = 800;
 
-QVector<double> a(500), b(500);
+QVector<double> a(801), b(801);
 
 QVector<double> c , d;
 
@@ -47,8 +47,8 @@ void MainWindow::configAllButton(bool status)
    ui-> ClearRButton -> setEnabled(status);
    ui-> ClearTButton -> setEnabled(status);
    ui-> stopButton -> setEnabled(status);
-   ui->turningButton->setEnabled(status);
-   ui->sendButton->setEnabled(status);
+   ui->vButton->setEnabled(status);
+   ui->pButton->setEnabled(status);
    ui->sendButton->setEnabled(status);
 }
 void MainWindow:: plotSetting(QCustomPlot  *plot, const char* xLabel, const char * yLabel)
@@ -202,7 +202,7 @@ void MainWindow::on_sendButton_clicked()
         ui->textTransmit->append(text);
             }
     //Plot print SetPoint
-    c={0,400};
+    c={0,800};
     d={fsetPoint,fsetPoint};
     ui -> plot -> graph(0) -> setData(c,d);
     ui->plot->rescaleAxes();
@@ -212,19 +212,7 @@ void MainWindow::on_sendButton_clicked()
 
 
 
-void MainWindow::on_turningButton_clicked()
-{
-    QByteArray a ("02 56 54 55 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03");
-    a = QByteArray::fromHex(a);
-    mSerial->write(a);
 
-    if(mSerial -> isWritable())
-            {
-        QString text = "Send succeed \n";
-        ui->textTransmit->append(text);
-            }
-
-}
 
 
 void MainWindow::on_stopButton_clicked()
@@ -243,13 +231,19 @@ void MainWindow::on_stopButton_clicked()
 
 void MainWindow::Recievedata()
 {
+    code=".";
 
-int s=7;
-QByteArray data=mSerial->readAll();
-if(data.size() >= s )
-{
-    QString text = QString(data);
-    text.replace(" ","");
+    QByteArray data=mSerial->readAll();
+    qDebug()<<data;
+    QString buffer = QString(data);
+    tex= tex.append(buffer);
+    int index = tex.indexOf(code);
+
+    if(index != -1)
+    {
+       tex.replace(" ","");
+       QString text = tex.mid(0,index);
+
 
     ui->textRecieve->append(text);
     if(k<counter)
@@ -280,13 +274,11 @@ if(data.size() >= s )
             QString text = "STOP \n";
             ui->textTransmit->append(text);
                 }
+
    }
-
+    tex.remove(0,index+code.size());
 }
 }
-
-
-
 
 
 void MainWindow::on_pushButton_clicked()
@@ -303,6 +295,38 @@ void MainWindow::on_pushButton_clicked()
     ui->plot->replot();
     ui-> plot -> update();
     k=0;
+
+}
+
+
+
+
+void MainWindow::on_vButton_clicked()
+{
+    QByteArray a ("02 56 54 55 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03");
+    a = QByteArray::fromHex(a);
+    mSerial->write(a);
+
+    if(mSerial -> isWritable())
+            {
+        QString text = "Send succeed \n";
+        ui->textTransmit->append(text);
+            }
+
+}
+
+
+void MainWindow::on_pButton_clicked()
+{
+    QByteArray a ("02 50 54 55 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03");
+    a = QByteArray::fromHex(a);
+    mSerial->write(a);
+
+    if(mSerial -> isWritable())
+            {
+        QString text = "Send succeed \n";
+        ui->textTransmit->append(text);
+            }
 
 }
 
